@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from rest_framework import filters, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -14,7 +15,7 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
-    lookup_field = 'username'
+    # lookup_field = 'username'
     # permission_classes = (IsAuthenticated)
 
     def get_serializer_class(self):
@@ -32,5 +33,10 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=('POST',),
             permission_classes=(IsAuthenticated,))
     def set_password(self, request):
-        serializer = UserResetPasswordSerializer(request.user)
+        serializer = UserResetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        if self.request.user.password == serializer.data['current_password']:
+            self.request.user.set_password(serializer.data['new_password'])
+            self.request.user.save()
+            return Response(serializer.data)
         return Response(serializer.data)

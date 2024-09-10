@@ -1,6 +1,9 @@
 from django.contrib.auth import get_user_model
-from rest_framework import serializers
 from djoser.serializers import UserCreateSerializer
+from django.shortcuts import get_object_or_404
+from rest_framework import serializers
+from djoser import urls
+
 User = get_user_model()
 
 
@@ -14,22 +17,16 @@ class UserSerializer(serializers.ModelSerializer):
             'last_name',
         )
 
+
 class UserRegistrationSerializer(UserCreateSerializer):
     class Meta(UserCreateSerializer.Meta):
-        fields = ('email', 'username', 'first_name', 'last_name', 'password', )
-
-
-
-# class UserWithPasswordSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = User
-#         fields = (
-#             'email',
-#             'username',
-#             'first_name',
-#             'last_name',
-#             'password',
-#         )
+        fields = (
+            'email',
+            'username',
+            'first_name',
+            'last_name',
+            'password',
+        )
 
 
 class UserResetPasswordSerializer(serializers.Serializer):
