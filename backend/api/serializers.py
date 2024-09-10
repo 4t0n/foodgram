@@ -1,34 +1,32 @@
 from django.contrib.auth import get_user_model
-from djoser.serializers import UserCreateSerializer
+from djoser.serializers import UserSerializer, UserCreateSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-from djoser import urls
 
 User = get_user_model()
 
 
-class UserSerializer(serializers.ModelSerializer):
+class CustomUserSerializer(UserSerializer):
     class Meta:
         model = User
         fields = (
             'email',
+            'id',
             'username',
             'first_name',
             'last_name',
         )
 
 
-class UserRegistrationSerializer(UserCreateSerializer):
-    class Meta(UserCreateSerializer.Meta):
+class CustomUserCreateSerializer(UserCreateSerializer):
+    class Meta:
+        model = User
         fields = (
             'email',
+            'id',
             'username',
             'first_name',
             'last_name',
             'password',
         )
-
-
-class UserResetPasswordSerializer(serializers.Serializer):
-    new_password = serializers.CharField(max_length=128)
-    current_password = serializers.CharField(max_length=128)
+        read_only_fields = ('id',)
