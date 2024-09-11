@@ -5,6 +5,8 @@ from django.core.files.base import ContentFile
 from djoser.serializers import UserSerializer, UserCreateSerializer
 from rest_framework import serializers
 
+from .models import Follow
+
 User = get_user_model()
 
 
@@ -19,6 +21,11 @@ class Base64ImageField(serializers.ImageField):
 
 
 class CustomUserSerializer(UserSerializer):
+    is_subscribed = serializers.SerializerMethodField(
+        read_only=True,
+        default=False,
+    )
+
     class Meta:
         model = User
         fields = (
@@ -27,8 +34,15 @@ class CustomUserSerializer(UserSerializer):
             'username',
             'first_name',
             'last_name',
+            'is_subscribed',
             'avatar',
         )
+
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return request.user.followers.filter(user=obj).exists()
+        return False
 
 
 class CustomUserCreateSerializer(UserCreateSerializer):
@@ -46,7 +60,7 @@ class CustomUserCreateSerializer(UserCreateSerializer):
 
 
 class AvatarSerializers(serializers.ModelSerializer):
-    avatar = Base64ImageField(required=False, allow_null=True)
+    avatar = Base64ImageField(required=True, allow_null=True)
 
     class Meta:
         model = User
