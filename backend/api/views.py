@@ -2,7 +2,10 @@ from rest_framework import viewsets
 from rest_framework.pagination import PageNumberPagination
 
 from recipes.models import Ingredient, Recipe, Tag
-from .serializers import IngredientSerializer, RecipeSerializer, TagSerializer
+from .serializers import (
+    IngredientSerializer, RecipeSerializer, RecipeCreateSerializer,
+    TagSerializer
+)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -19,3 +22,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
     pagination_class = PageNumberPagination
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(
+            author=self.request.user
+        )
+
+    def get_serializer_class(self, *args, **kwargs):
+        if self.action in ('create', 'partial_update'):
+            return RecipeCreateSerializer
+        return self.serializer_class

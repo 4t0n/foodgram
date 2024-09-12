@@ -52,6 +52,7 @@ class Recipe(models.Model):
     )
     image = models.ImageField(
         upload_to='recipes/images/',
+        blank=False,
     )
     text = models.TextField(
         verbose_name='Описание',
@@ -77,6 +78,14 @@ class Recipe(models.Model):
 
 
 class RecipeIngredient(models.Model):
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
-    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='recipe_to_ingredient',
+    )
+    ingredient = models.ForeignKey(
+        Ingredient,
+        on_delete=models.CASCADE,
+        related_name='ingredient_to_recipe',
+    )
     amount = models.IntegerField()
