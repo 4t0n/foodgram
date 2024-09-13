@@ -4,6 +4,7 @@ from django.core.validators import MinValueValidator
 
 from foodgram_backend.constants import (LENGTH_RECIPE_NAME, LENGTH_TAG_NAME,
                                         LENGTH_SLUG, MIN_COOKING_TIME,
+                                        MIN_INGREDIENT_AMOUNT,
                                         LENGTH_INGREDIENT_NAME,
                                         LENGTH_MEASUREMENT_UNIT)
 
@@ -58,7 +59,6 @@ class Recipe(models.Model):
         verbose_name='Описание',
     )
     cooking_time = models.PositiveIntegerField(
-        default=1,
         validators=[MinValueValidator(MIN_COOKING_TIME),],
         verbose_name='Время приготовления (мин)',
     )
@@ -70,6 +70,12 @@ class Recipe(models.Model):
         Ingredient,
         related_name='recipes',
         through='RecipeIngredient',
+    )
+
+    short_link = models.CharField(
+        max_length=20,
+        unique=True,
+        blank=True
     )
 
     class Meta:
@@ -88,4 +94,6 @@ class RecipeIngredient(models.Model):
         on_delete=models.CASCADE,
         related_name='ingredient_to_recipe',
     )
-    amount = models.IntegerField()
+    amount = models.PositiveIntegerField(
+        validators=[MinValueValidator(MIN_INGREDIENT_AMOUNT),],
+    )
