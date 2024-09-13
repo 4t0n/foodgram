@@ -1,9 +1,13 @@
 import base64
+import random
+import string
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
+from django.db import IntegrityError
 from rest_framework import serializers
 
+from foodgram_backend.constants import SHORT_LINK_LENGTH
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 from users.serializers import CustomUserSerializer
 
@@ -98,9 +102,20 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             'cooking_time',
         )
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict):
         ingredients_data = validated_data.pop('ingredients')
         instance = super().create(validated_data)
+        short_link = ''.join(
+            random.choices(
+                string.ascii_letters + string.digits,
+                k=SHORT_LINK_LENGTH
+            )
+        )
+        try:
+            instance.short_link = short_link
+            instance.save()
+        except IntegrityError:
+            pass
         RecipeIngredient.objects.bulk_create([
             RecipeIngredient(
                 recipe=instance,
@@ -131,6 +146,13 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             'cooking_time', instance.cooking_time)
         instance.save()
         return instance
+
+    def get_fields(self, *args, **kwargs):
+        fields = super().get_fields(*args, **kwargs)
+        request = self.context.get('request', None)
+        if request and getattr(request, 'method', None) == "PATCH":
+            fields['image'].required = False
+        return fields
 
     def to_representation(self, instance):
         serializer = RecipeSerializer(instance)

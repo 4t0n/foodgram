@@ -32,3 +32,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if self.action in ('create', 'partial_update'):
             return RecipeCreateSerializer
         return self.serializer_class
+
+    def update(self, request, *args, partial=True, **kwargs):
+        return super().update(request, *args, **kwargs)
