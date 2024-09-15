@@ -24,6 +24,9 @@ class Tag(models.Model):
         verbose_name = 'тег'
         verbose_name_plural = 'Теги'
 
+    def __str__(self):
+        return self.name
+
 
 class Ingredient(models.Model):
     name = models.CharField(
@@ -39,6 +42,9 @@ class Ingredient(models.Model):
         verbose_name = 'ингредиент'
         verbose_name_plural = 'Ингредиенты'
 
+    def __str__(self):
+        return f'{self.name}, {self.measurement_unit}'
+
 
 class Recipe(models.Model):
     author = models.ForeignKey(
@@ -52,6 +58,7 @@ class Recipe(models.Model):
         max_length=LENGTH_RECIPE_NAME,
     )
     image = models.ImageField(
+        verbose_name='Изображение',
         upload_to='recipes/images/',
         blank=False,
     )
@@ -65,22 +72,28 @@ class Recipe(models.Model):
     tags = models.ManyToManyField(
         Tag,
         related_name='recipes',
+        verbose_name='Теги',
     )
     ingredients = models.ManyToManyField(
         Ingredient,
         related_name='recipes',
         through='RecipeIngredient',
+        verbose_name='Ингредиенты',
     )
 
     short_link = models.CharField(
         max_length=20,
         unique=True,
-        blank=True
+        blank=True,
+        verbose_name='Токен для короткой ссылки',
     )
 
     class Meta:
         verbose_name = 'рецепт'
         verbose_name_plural = 'Рецепты'
+
+    def __str__(self):
+        return self.name
 
 
 class RecipeIngredient(models.Model):
@@ -88,12 +101,18 @@ class RecipeIngredient(models.Model):
         Recipe,
         on_delete=models.CASCADE,
         related_name='recipe_to_ingredient',
+        verbose_name='Рецепт',
     )
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
         related_name='ingredient_to_recipe',
+        verbose_name='Ингредиент',
     )
     amount = models.PositiveIntegerField(
         validators=[MinValueValidator(MIN_INGREDIENT_AMOUNT),],
+        verbose_name='Количество',
     )
+
+    class Meta:
+        verbose_name_plural = 'Ингредиенты для рецептов'
