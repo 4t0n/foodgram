@@ -65,7 +65,7 @@ class IngredientCreateSerializer(serializers.ModelSerializer):
 
 class RecipeSerializer(serializers.ModelSerializer):
     image = Base64ImageField(required=True, allow_null=True)
-    author = CustomUserSerializer()
+    author = CustomUserSerializer(read_only=True)
     tags = TagSerializer(many=True)
     ingredients = IngredientDetailSerializer(
         many=True,
@@ -159,3 +159,11 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         serializer = RecipeSerializer(instance)
         return serializer.data
+
+
+class GetLinkSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Recipe
+        fields = ('short_link',)
+        read_only_fields = ('short_link',)

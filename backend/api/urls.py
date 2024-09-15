@@ -8,7 +8,8 @@ api_urls = []
 router_api = routers.DefaultRouter()
 router_api.register('tags', TagViewSet, basename='tag')
 router_api.register('ingredients', IngredientViewSet, basename='ingredient')
-router_api.register('recipes', RecipeViewSet, basename='recipe')
+router_api.register('recipes', RecipeViewSet)
+
 api_urls.extend(router_api.urls)
 
 urlpatterns = [

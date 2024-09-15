@@ -1,10 +1,17 @@
-from rest_framework import viewsets
-from rest_framework.pagination import PageNumberPagination
+from django.shortcuts import get_object_or_404, redirect
+from django.views.generic.base import RedirectView
 
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+from foodgram_backend.constants import HOST_NAME
 from recipes.models import Ingredient, Recipe, Tag
 from .serializers import (
-    IngredientSerializer, RecipeSerializer, RecipeCreateSerializer,
-    TagSerializer
+    GetLinkSerializer, IngredientSerializer, RecipeSerializer,
+    RecipeCreateSerializer, TagSerializer
 )
 
 
@@ -35,3 +42,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, partial=True, **kwargs):
         return super().update(request, *args, **kwargs)
+
+    @action(['get',], detail=True, url_path='get-link')
+    def get_link(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        serializer = GetLinkSerializer(self.object)
+        return Response({'short-link': f"{HOST_NAME}/s/"
+                        f"{serializer.data.get('short_link')}"})
+
+
+class ShortLinkRedirect(RedirectView):
+    permanent = False
+    query_string = True
+    pattern_name = "recipe-detail"
+
+    def get(self, request, *args, **kwargs):
+        object_url = kwargs['short_link']
+        obj = get_object_or_404(Recipe, short_link=object_url)
+        return redirect(obj.get_absolute_url())
