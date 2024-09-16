@@ -10,10 +10,11 @@ from rest_framework.response import Response
 
 from foodgram_backend.constants import HOST_NAME
 from recipes.models import Ingredient, Recipe, Tag, User
+from users.models import Follow
 from .serializers import (
-    AvatarSerializers, FollowListSerializer,
+    AvatarSerializers, FollowSerializer,
     GetLinkSerializer, IngredientSerializer, RecipeSerializer,
-    RecipeCreateSerializer, TagSerializer
+    RecipeCreateSerializer, SubscribeSerializer, TagSerializer
 )
 
 
@@ -26,10 +27,10 @@ class CustomUserViewSet(UserViewSet):
     def destroy(self, request, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    @action(['get',], detail=False, permission_classes=(IsAuthenticated,))
-    def me(self, request, *args, **kwargs):
-        self.get_object = self.get_instance
-        return self.retrieve(request, *args, **kwargs)
+    # @action(['get',], detail=False, permission_classes=(IsAuthenticated,))
+    # def me(self, request, *args, **kwargs):
+    #     self.get_object = self.get_instance
+    #     return self.retrieve(request, *args, **kwargs)
 
     @action(
         ['put',],
@@ -61,18 +62,58 @@ class CustomUserViewSet(UserViewSet):
         follows = request.user.subscriptions.all()
         page = self.paginate_queryset(follows)
         if page is not None:
-            serializer = FollowListSerializer(
+            serializer = FollowSerializer(
                 page,
                 many=True,
                 context={'request': request},
             )
             return self.get_paginated_response(serializer.data)
-        serializer = FollowListSerializer(
+        serializer = FollowSerializer(
             follows,
             many=True,
             context={'request': request},
         )
         return Response(serializer.data)
+
+    @action(['post'],
+            detail=False,
+            permission_classes=(IsAuthenticated,),
+            url_path=r'(?P<id>\d+)/subscribe'
+            )
+    def subscribe(self, request, id=None, **kwargs):
+        author = get_object_or_404(User, pk=id)
+        user = request.user
+        if author == user:
+            return Response(
+                {'errors': 'Нельзя подписаться на самого себя!'},
+                status=status.HTTP_400_BAD_REQUEST)
+        if author in user.subscriptions.all():
+            return Response(
+                {'errors': 'Вы уже подписаны на этого пользователя!'},
+                status=status.HTTP_400_BAD_REQUEST)
+        Follow.objects.create(user=user, author=author)
+        serializer = SubscribeSerializer(
+            author,
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @subscribe.mapping.delete
+    def delete_subscribe(self, request, id=None):
+        author = get_object_or_404(User, pk=id)
+        user = request.user
+        if author == user:
+            return Response(
+                {'errors': 'Нельзя отписаться от самого себя!'},
+                status=status.HTTP_400_BAD_REQUEST)
+        if author not in user.subscriptions.all():
+            return Response(
+                {'errors': 'Вы не подписаны на этого пользователя!'},
+                status=status.HTTP_400_BAD_REQUEST)
+        get_object_or_404(Follow, author=author, user=user).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):

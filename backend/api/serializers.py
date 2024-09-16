@@ -3,10 +3,12 @@ import random
 import string
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import SuspiciousOperation
 from django.core.files.base import ContentFile
 from django.db import IntegrityError
 from djoser.serializers import UserSerializer, UserCreateSerializer
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 
 from foodgram_backend.constants import SHORT_LINK_LENGTH
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
@@ -228,7 +230,7 @@ class GetLinkSerializer(serializers.ModelSerializer):
         read_only_fields = ('short_link',)
 
 
-class FollowListSerializer(CustomUserSerializer):
+class FollowSerializer(CustomUserSerializer):
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
@@ -243,6 +245,34 @@ class FollowListSerializer(CustomUserSerializer):
     class Meta:
         model = User
         fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'recipes',
+            'recipes_count',
+            'is_subscribed',
+            'avatar',
+        )
+
+
+class SubscribeSerializer(FollowSerializer):
+
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'recipes',
+            'recipes_count',
+            'is_subscribed',
+            'avatar',
+        )
+        read_only_fields = (
             'email',
             'id',
             'username',
