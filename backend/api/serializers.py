@@ -5,12 +5,12 @@ import string
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.db import IntegrityError
+from djoser.serializers import UserSerializer, UserCreateSerializer
 from rest_framework import serializers
 
 from foodgram_backend.constants import SHORT_LINK_LENGTH
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
-from users.serializers import CustomUserSerializer
-
+from users.models import Follow
 
 User = get_user_model()
 
@@ -23,6 +23,53 @@ class Base64ImageField(serializers.ImageField):
 
             data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
         return super().to_internal_value(data)
+
+
+class CustomUserSerializer(UserSerializer):
+    is_subscribed = serializers.SerializerMethodField(
+        read_only=True,
+        default=False,
+    )
+
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+            'avatar',
+        )
+
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return request.user in obj.followers.all()
+        return False
+
+
+class CustomUserCreateSerializer(UserCreateSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'password',
+        )
+        read_only_fields = ('id',)
+
+
+class AvatarSerializers(serializers.ModelSerializer):
+    avatar = Base64ImageField(required=True, allow_null=True)
+
+    class Meta:
+        model = User
+        fields = ('avatar',)
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -63,8 +110,20 @@ class IngredientCreateSerializer(serializers.ModelSerializer):
         fields = ('id', 'amount')
 
 
-class RecipeSerializer(serializers.ModelSerializer):
+class RecipeBaseSerializer(serializers.ModelSerializer):
     image = Base64ImageField(required=True, allow_null=True)
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'id',
+            'name',
+            'image',
+            'cooking_time',
+        )
+
+
+class RecipeSerializer(RecipeBaseSerializer):
     author = CustomUserSerializer(read_only=True)
     tags = TagSerializer(many=True)
     ingredients = IngredientDetailSerializer(
@@ -167,3 +226,30 @@ class GetLinkSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = ('short_link',)
         read_only_fields = ('short_link',)
+
+
+class FollowListSerializer(CustomUserSerializer):
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+
+    def get_recipes(self, obj):
+        serializer = RecipeBaseSerializer(obj.user_recipes.all(), many=True)
+        return serializer.data
+
+    def get_recipes_count(self, obj):
+        serializer = RecipeBaseSerializer(obj.user_recipes.all(), many=True)
+        return len(serializer.data)
+
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'recipes',
+            'recipes_count',
+            'is_subscribed',
+            'avatar',
+        )

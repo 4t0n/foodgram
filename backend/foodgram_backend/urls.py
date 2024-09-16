@@ -4,8 +4,15 @@ from django.views.generic import TemplateView
 
 from django.conf import settings
 from django.conf.urls.static import static
+from rest_framework import routers
 
-from api.views import ShortLinkRedirect
+from api.views import CustomUserViewSet, ShortLinkRedirect
+
+user_urls = []
+
+router_users = routers.DefaultRouter()
+router_users.register('users', CustomUserViewSet, basename='user')
+user_urls.extend(router_users.urls)
 
 urlpatterns = [
     path('admin/', admin.site.urls),

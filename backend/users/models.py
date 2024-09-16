@@ -29,6 +29,12 @@ class CustomUser(AbstractUser):
         blank=True,
         default=None
     )
+    subscriptions = models.ManyToManyField(
+        'self',
+        through='Follow',
+        related_name='followers',
+        symmetrical=False,
+    )
 
     class Meta:
         verbose_name = 'пользователь'
@@ -41,18 +47,18 @@ class Follow(models.Model):
     user = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
-        related_name='following'
+        related_name='follower'
     )
-    following = models.ForeignKey(
+    author = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
-        related_name='followers'
+        related_name='following'
     )
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'following'],
+                fields=['user', 'author'],
                 name='unique_user_following'
             )
         ]
