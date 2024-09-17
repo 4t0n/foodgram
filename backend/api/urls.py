@@ -1,7 +1,7 @@
 from django.urls import include, path
 from rest_framework import routers
 
-from .views import (CustomUserViewSet, IngredientViewSet, csv_shopping_cart,
+from .views import (CustomUserViewSet, IngredientViewSet,
                     RecipeViewSet, TagViewSet)
 
 api_urls = []
@@ -16,6 +16,5 @@ api_urls.extend(router_api.urls)
 
 urlpatterns = [
     path('auth/', include('djoser.urls.authtoken')),
-    path('recipes/download_shopping_cart/', csv_shopping_cart),
     path('', include(api_urls)),
 ]

@@ -1,9 +1,4 @@
-import csv
-from io import BytesIO
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfgen import canvas
-
+from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic.base import RedirectView
@@ -16,7 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from foodgram_backend.constants import HOST_NAME
-from recipes.models import Ingredient, Recipe, Tag, User
+from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag, User
 from users.models import Follow
 from .serializers import (
     AvatarSerializers, FollowSerializer,
@@ -34,11 +29,6 @@ class CustomUserViewSet(UserViewSet):
 
     def destroy(self, request, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    # @action(['get',], detail=False, permission_classes=(IsAuthenticated,))
-    # def me(self, request, *args, **kwargs):
-    #     self.get_object = self.get_instance
-    #     return self.retrieve(request, *args, **kwargs)
 
     @action(
         ['put',],
@@ -102,10 +92,8 @@ class CustomUserViewSet(UserViewSet):
         Follow.objects.create(user=user, author=author)
         serializer = SubscribeSerializer(
             author,
-            data=request.data,
             context={"request": request},
         )
-        serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @subscribe.mapping.delete
@@ -213,6 +201,26 @@ class RecipeViewSet(viewsets.ModelViewSet):
         user.shopping_cart.remove(recipe)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @action(['get',], detail=False, url_path='download_shopping_cart')
+    def download_shopping_cart(self, request, *args, **kwargs):
+        shopping_cart = ''
+        user = User.objects.get(id=1)
+        ingredients = RecipeIngredient.objects.filter(
+            recipe__shopping=user
+        ).values(
+            'ingredient__name',
+            'ingredient__measurement_unit'
+        ).annotate(total=Sum('amount', distinct=True))
+        for ingredient in ingredients:
+            shopping_cart += (
+                f"— {ingredient['ingredient__name']}, "
+                f"{ingredient['ingredient__measurement_unit']}\t"
+                f"{ingredient['total']}\n"
+            )
+        response = HttpResponse(shopping_cart, content_type='text/plain')
+        response['Content-Disposition'] = 'attachment; filename=cart.txt'
+        return response
+
 
 class ShortLinkRedirect(RedirectView):
     permanent = False
@@ -223,49 +231,3 @@ class ShortLinkRedirect(RedirectView):
         object_url = kwargs['short_link']
         obj = get_object_or_404(Recipe, short_link=object_url)
         return redirect(obj.get_absolute_url())
-
-
-@api_view(['GET'])
-def csv_shopping_cart(request):
-    # response = HttpResponse(content_type='application/pdf')
-    # response['Content-Disposition'] = "attachment; filename='hello.pdf'"
-    # buffer = BytesIO()
-    # pdfmetrics.registerFont(TTFont('Vera', 'Vera.ttf'))
-    # p = canvas.Canvas(buffer)
-    # p.setFont('Vera', 28)
-    # p.setFillColorRGB(0.14, 0.59, 0.74)
-    # p.drawString(60, 750, 'Список покупок')
-    # p.setFont('Vera', 16)
-    # p.setFillColorRGB(0, 0, 0)
-    # positionY = 700
-    # # breakpoint()
-    # queryset = User.objects.get(id=4).shopping_cart.all()
-    # serializer = RecipeSerializer(queryset, many=True)
-    # # serializer.is_valid(raise_exception=True)
-    # # ingredients_in_recipes = request.user.shopping_cart.all().prefetch_related(
-    # #     'ingredients')
-    # for recipe in serializer.data:
-    #     for ingredient in recipe['ingredients']:
-    #         p.drawString(60, positionY, ingredient['name'])
-    #         positionY -= 25
-    # p.showPage()
-    # p.save()
-    # pdf = buffer.getvalue()
-    # buffer.close()
-    # response.write(pdf)
-    # return response
-    output = []
-    response = HttpResponse(content_type='text/csv; charset=utf-8')
-    writer = csv.writer(response)
-    queryset = User.objects.get(id=4).shopping_cart.all()
-    serializer = RecipeSerializer(queryset, many=True)
-    writer.writerow(['Название продукта', 'Единица измерения', 'Количество'])
-    for recipe in serializer.data:
-        for ingredient in recipe['ingredients']:
-            output.append([
-                ingredient['name'],
-                ingredient['measurement_unit'],
-                ingredient['amount']]
-            )
-    writer.writerows(output)
-    return response
