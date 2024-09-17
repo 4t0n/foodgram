@@ -1,9 +1,16 @@
+import csv
+from io import BytesIO
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
+
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic.base import RedirectView
 from djoser.permissions import CurrentUserOrAdmin
 from djoser.views import UserViewSet
 from rest_framework import status, viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -13,8 +20,9 @@ from recipes.models import Ingredient, Recipe, Tag, User
 from users.models import Follow
 from .serializers import (
     AvatarSerializers, FollowSerializer,
-    GetLinkSerializer, IngredientSerializer, RecipeSerializer,
-    RecipeCreateSerializer, SubscribeSerializer, TagSerializer
+    GetLinkSerializer, IngredientSerializer, RecipeBaseSerializer,
+    RecipeSerializer, RecipeCreateSerializer, SubscribeSerializer,
+    TagSerializer,
 )
 
 
@@ -151,6 +159,60 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response({'short-link': f"{HOST_NAME}/s/"
                         f"{serializer.data.get('short_link')}"})
 
+    @action(['post'],
+            detail=False,
+            permission_classes=(IsAuthenticated,),
+            url_path=r'(?P<id>\d+)/favorite'
+            )
+    def favorite(self, request, id=None, **kwargs):
+        recipe = get_object_or_404(Recipe, pk=id)
+        user = request.user
+        if recipe in user.favorite.all():
+            return Response(
+                {'errors': 'Рецепт уже есть в избранном!'},
+                status=status.HTTP_400_BAD_REQUEST)
+        user.favorite.add(recipe)
+        serializer = RecipeBaseSerializer(recipe)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @favorite.mapping.delete
+    def delete_favorite(self, request, id=None):
+        recipe = get_object_or_404(Recipe, pk=id)
+        user = request.user
+        if recipe not in user.favorite.all():
+            return Response(
+                {'errors': 'Рецепт отсутствует в избранном!'},
+                status=status.HTTP_400_BAD_REQUEST)
+        user.favorite.remove(recipe)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(['post'],
+            detail=False,
+            permission_classes=(IsAuthenticated,),
+            url_path=r'(?P<id>\d+)/shopping_cart'
+            )
+    def shopping_cart(self, request, id=None, **kwargs):
+        recipe = get_object_or_404(Recipe, pk=id)
+        user = request.user
+        if recipe in user.shopping_cart.all():
+            return Response(
+                {'errors': 'Рецепт уже есть в списке покупок!'},
+                status=status.HTTP_400_BAD_REQUEST)
+        user.shopping_cart.add(recipe)
+        serializer = RecipeBaseSerializer(recipe)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @shopping_cart.mapping.delete
+    def delete_from_shopping_cart(self, request, id=None):
+        recipe = get_object_or_404(Recipe, pk=id)
+        user = request.user
+        if recipe not in user.shopping_cart.all():
+            return Response(
+                {'errors': 'Рецепт отсутствует в списке покупок!'},
+                status=status.HTTP_400_BAD_REQUEST)
+        user.shopping_cart.remove(recipe)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class ShortLinkRedirect(RedirectView):
     permanent = False
@@ -161,3 +223,49 @@ class ShortLinkRedirect(RedirectView):
         object_url = kwargs['short_link']
         obj = get_object_or_404(Recipe, short_link=object_url)
         return redirect(obj.get_absolute_url())
+
+
+@api_view(['GET'])
+def csv_shopping_cart(request):
+    # response = HttpResponse(content_type='application/pdf')
+    # response['Content-Disposition'] = "attachment; filename='hello.pdf'"
+    # buffer = BytesIO()
+    # pdfmetrics.registerFont(TTFont('Vera', 'Vera.ttf'))
+    # p = canvas.Canvas(buffer)
+    # p.setFont('Vera', 28)
+    # p.setFillColorRGB(0.14, 0.59, 0.74)
+    # p.drawString(60, 750, 'Список покупок')
+    # p.setFont('Vera', 16)
+    # p.setFillColorRGB(0, 0, 0)
+    # positionY = 700
+    # # breakpoint()
+    # queryset = User.objects.get(id=4).shopping_cart.all()
+    # serializer = RecipeSerializer(queryset, many=True)
+    # # serializer.is_valid(raise_exception=True)
+    # # ingredients_in_recipes = request.user.shopping_cart.all().prefetch_related(
+    # #     'ingredients')
+    # for recipe in serializer.data:
+    #     for ingredient in recipe['ingredients']:
+    #         p.drawString(60, positionY, ingredient['name'])
+    #         positionY -= 25
+    # p.showPage()
+    # p.save()
+    # pdf = buffer.getvalue()
+    # buffer.close()
+    # response.write(pdf)
+    # return response
+    output = []
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    writer = csv.writer(response)
+    queryset = User.objects.get(id=4).shopping_cart.all()
+    serializer = RecipeSerializer(queryset, many=True)
+    writer.writerow(['Название продукта', 'Единица измерения', 'Количество'])
+    for recipe in serializer.data:
+        for ingredient in recipe['ingredients']:
+            output.append([
+                ingredient['name'],
+                ingredient['measurement_unit'],
+                ingredient['amount']]
+            )
+    writer.writerows(output)
+    return response

@@ -24,6 +24,7 @@ class CustomUser(AbstractUser):
     first_name = models.CharField('Имя', max_length=150)
     last_name = models.CharField('Фамилия', max_length=150)
     avatar = models.ImageField(
+        verbose_name='Аватар',
         upload_to='users/',
         null=True,
         blank=True,
@@ -31,9 +32,25 @@ class CustomUser(AbstractUser):
     )
     subscriptions = models.ManyToManyField(
         'self',
+        verbose_name='Подписки',
         through='Follow',
         related_name='followers',
         symmetrical=False,
+        blank=True,
+    )
+    favorite = models.ManyToManyField(
+        verbose_name='Избранное',
+        to='recipes.Recipe',
+        related_name='favorites',
+        symmetrical=False,
+        blank=True,
+    )
+    shopping_cart = models.ManyToManyField(
+        verbose_name='Список покупок',
+        to='recipes.Recipe',
+        related_name='shopping',
+        symmetrical=False,
+        blank=True,
     )
 
     class Meta:
