@@ -8,7 +8,7 @@ from django.core.files.base import ContentFile
 from django.db import IntegrityError
 from djoser.serializers import UserSerializer, UserCreateSerializer
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator
+from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 
 from foodgram_backend.constants import SHORT_LINK_LENGTH
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
@@ -173,17 +173,22 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     ingredients = IngredientCreateSerializer(many=True)
     image = Base64ImageField()
 
-    class Meta:
-        model = Recipe
-        fields = (
-            'id',
-            'ingredients',
-            'tags',
-            'image',
-            'name',
-            'text',
-            'cooking_time',
-        )
+    def validate_ingredients(self, ingredients):
+        if not ingredients:
+            raise serializers.ValidationError(
+                {'ingredients': 'Отсутствуют ингредиенты!'})
+        elif len(ingredients) != len(set(ing['id'] for ing in ingredients)):
+            raise serializers.ValidationError(
+                {'ingredients': 'Ингредиенты повторяются!'})
+        else:
+            return ingredients
+
+    def validate_tags(self, tags):
+        if len(tags) != len(set(tags)):
+            raise serializers.ValidationError(
+                {'tags': 'Теги повторяются!'})
+        else:
+            return tags
 
     def create(self, validated_data: dict):
         ingredients_data = validated_data.pop('ingredients')
@@ -242,6 +247,18 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         serializer = RecipeSerializer(instance)
         return serializer.data
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'id',
+            'ingredients',
+            'tags',
+            'image',
+            'name',
+            'text',
+            'cooking_time',
+        )
 
 
 class GetLinkSerializer(serializers.ModelSerializer):
