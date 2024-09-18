@@ -81,7 +81,6 @@ class Recipe(models.Model):
         through='RecipeIngredient',
         verbose_name='Ингредиенты',
     )
-
     short_link = models.CharField(
         max_length=20,
         unique=True,
@@ -120,3 +119,9 @@ class RecipeIngredient(models.Model):
 
     class Meta:
         verbose_name_plural = 'Ингредиенты для рецептов'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['recipe', 'ingredient'],
+                name='unique_recipe_ingredient'
+            )
+        ]

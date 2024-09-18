@@ -6,7 +6,7 @@ from djoser.permissions import CurrentUserOrAdmin
 from djoser.views import UserViewSet
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -22,13 +22,18 @@ from .serializers import (
 
 
 class CustomUserViewSet(UserViewSet):
-    pagination_class = PageNumberPagination
+    pagination_class = LimitOffsetPagination
 
     def update(self, request, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def destroy(self, request, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    @action(['get',], detail=False, permission_classes=(IsAuthenticated,))
+    def me(self, request, *args, **kwargs):
+        self.get_object = self.get_instance
+        return self.retrieve(request, *args, **kwargs)
 
     @action(
         ['put',],
@@ -54,7 +59,8 @@ class CustomUserViewSet(UserViewSet):
 
     @action(['get'],
             detail=False,
-            permission_classes=(IsAuthenticated,)
+            permission_classes=(IsAuthenticated,),
+            pagination_class=LimitOffsetPagination,
             )
     def subscriptions(self, request, *args, **kwargs):
         follows = request.user.subscriptions.all()
@@ -76,7 +82,7 @@ class CustomUserViewSet(UserViewSet):
     @action(['post'],
             detail=False,
             permission_classes=(IsAuthenticated,),
-            url_path=r'(?P<id>\d+)/subscribe'
+            url_path=r'(?P<id>\d+)/subscribe',
             )
     def subscribe(self, request, id=None, **kwargs):
         author = get_object_or_404(User, pk=id)
@@ -123,7 +129,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    pagination_class = PageNumberPagination
+    pagination_class = LimitOffsetPagination
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
 
