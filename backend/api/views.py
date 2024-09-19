@@ -1,7 +1,8 @@
-from django.db.models import Sum
+from django.db.models import BooleanField, Case, Count, Sum, Q, When
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic.base import RedirectView
+from django_filters.rest_framework import DjangoFilterBackend
 from djoser.permissions import CurrentUserOrAdmin, CurrentUserOrAdminOrReadOnly
 from djoser.views import UserViewSet
 from rest_framework import status, viewsets
@@ -13,6 +14,7 @@ from rest_framework.response import Response
 from foodgram_backend.constants import HOST_NAME
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag, User
 from users.models import Follow
+from .filters import RecipeFilter
 from .permissions import IsAuthorOrAdmin
 from .serializers import (
     AvatarSerializers, FollowSerializer,
@@ -133,6 +135,24 @@ class RecipeViewSet(viewsets.ModelViewSet):
     pagination_class = LimitOffsetPagination
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilter
+
+    # def get_queryset(self):
+    #     user = self.request.user
+    #     user_id = user.id if not user.is_anonymous else None
+    #     # breakpoint()
+    #     return Recipe.objects.all().annotate(
+    #         total_favorite=Count(
+    #             "favorites",
+    #             filter=Q(favorites__id=user_id)
+    #         ),
+    #         is_favorite=Case(
+    #             When(total_favorite__gte=1, then=True),
+    #             default=False,
+    #             output_field=BooleanField()
+    #         )
+    #     )
 
     def perform_create(self, serializer):
         serializer.save(
