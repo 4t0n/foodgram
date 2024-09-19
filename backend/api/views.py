@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from foodgram_backend.constants import HOST_NAME
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag, User
 from users.models import Follow
-from .permissions import IsAuthorOrReadOnly
+from .permissions import IsAuthorOrAdmin
 from .serializers import (
     AvatarSerializers, FollowSerializer,
     GetLinkSerializer, IngredientSerializer, RecipeBaseSerializer,
@@ -143,7 +143,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             self.permission_classes = [IsAuthenticated]
         elif self.action in ('partial_update', 'destroy'):
-            self.permission_classes = [IsAuthorOrReadOnly | IsAdminUser]
+            # breakpoint()
+            self.permission_classes = [IsAuthorOrAdmin]
         return super().get_permissions()
 
     def get_serializer_class(self, *args, **kwargs):
