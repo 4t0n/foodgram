@@ -1,9 +1,9 @@
-from django.db.models import BooleanField, Case, Count, Sum, Q, When
+from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic.base import RedirectView
 from django_filters.rest_framework import DjangoFilterBackend
-from djoser.permissions import CurrentUserOrAdmin, CurrentUserOrAdminOrReadOnly
+from djoser.permissions import CurrentUserOrAdmin
 from djoser.views import UserViewSet
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from foodgram_backend.constants import HOST_NAME
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag, User
 from users.models import Follow
-from .filters import RecipeFilter
+from .filters import IngredientFilter, RecipeFilter
 from .permissions import IsAuthorOrAdmin
 from .serializers import (
     AvatarSerializers, FollowSerializer,
@@ -129,6 +129,8 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = IngredientFilter
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -137,22 +139,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
-
-    # def get_queryset(self):
-    #     user = self.request.user
-    #     user_id = user.id if not user.is_anonymous else None
-    #     # breakpoint()
-    #     return Recipe.objects.all().annotate(
-    #         total_favorite=Count(
-    #             "favorites",
-    #             filter=Q(favorites__id=user_id)
-    #         ),
-    #         is_favorite=Case(
-    #             When(total_favorite__gte=1, then=True),
-    #             default=False,
-    #             output_field=BooleanField()
-    #         )
-    #     )
 
     def perform_create(self, serializer):
         serializer.save(
@@ -163,7 +149,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             self.permission_classes = [IsAuthenticated]
         elif self.action in ('partial_update', 'destroy'):
-            # breakpoint()
             self.permission_classes = [IsAuthorOrAdmin]
         return super().get_permissions()
 
