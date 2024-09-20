@@ -3,13 +3,13 @@ import random
 import string
 
 from django.contrib.auth import get_user_model
-from django.core.exceptions import SuspiciousOperation
 from django.core.files.base import ContentFile
-from django.db import IntegrityError
+from django.db.utils import IntegrityError
 from djoser.serializers import UserSerializer, UserCreateSerializer
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
+from rest_framework.validators import ValidationError
 
+from .validators import validate_recipes_limit
 from foodgram_backend.constants import SHORT_LINK_LENGTH
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 from users.models import Follow
@@ -274,11 +274,24 @@ class FollowSerializer(CustomUserSerializer):
     recipes_count = serializers.SerializerMethodField()
 
     def get_recipes(self, obj):
-        serializer = RecipeBaseSerializer(obj.user_recipes.all(), many=True)
+        recipes_limit = self.context.get(
+            'request').query_params.get('recipes_limit')
+        try:
+            validate_recipes_limit(recipes_limit)
+            query = obj.user_recipes.all()[:int(recipes_limit)]
+        except ValidationError:
+            query = obj.user_recipes.all()
+        serializer = RecipeBaseSerializer(
+            query,
+            many=True,
+        )
         return serializer.data
 
     def get_recipes_count(self, obj):
-        serializer = RecipeBaseSerializer(obj.user_recipes.all(), many=True)
+        serializer = RecipeBaseSerializer(
+            obj.user_recipes.all(),
+            many=True,
+        )
         return len(serializer.data)
 
     class Meta:
