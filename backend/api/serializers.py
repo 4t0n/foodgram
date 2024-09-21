@@ -256,7 +256,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance, validated_data):
-        breakpoint()
         ingredients_data = validated_data.get('ingredients')
         tags_data = validated_data.get('tags')
         instance.ingredients.clear()
