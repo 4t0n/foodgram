@@ -1,16 +1,13 @@
-import base64
 import random
 import string
 
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from django.forms import ModelForm
-from django.http import HttpRequest
 
 from foodgram_backend.constants import SHORT_LINK_LENGTH
-from .models import Ingredient, Recipe, RecipeIngredient, Tag
 
+from .models import Ingredient, Recipe, RecipeIngredient, Tag
 
 User = get_user_model()
 
@@ -61,4 +58,5 @@ class TagAdmin(admin.ModelAdmin):
 
 @admin.register(RecipeIngredient)
 class RecipeIngredientAdmin(admin.ModelAdmin):
-    pass
+    list_display = ['recipe', 'ingredient']
+    search_fields = ['recipe']

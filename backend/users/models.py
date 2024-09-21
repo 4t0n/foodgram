@@ -2,29 +2,23 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 
-from .validators import name_validator
 from foodgram_backend.constants import LENGTH_EMAIL, LENGTH_USERNAME
 
 
 class CustomUser(AbstractUser):
-
+    """Модель пользователя."""
     username = models.CharField(
-        'Никнейм',
         unique=True,
         max_length=LENGTH_USERNAME,
-        validators=(UnicodeUsernameValidator(), name_validator),
+        validators=(UnicodeUsernameValidator(),),
     )
-
     email = models.EmailField(
-        'Адрес эл.почты',
         unique=True,
         max_length=LENGTH_EMAIL,
     )
-    password = models.CharField('Пароль', max_length=128)
-    first_name = models.CharField('Имя', max_length=150)
-    last_name = models.CharField('Фамилия', max_length=150)
+    first_name = models.CharField(max_length=150)
+    last_name = models.CharField(max_length=150)
     avatar = models.ImageField(
-        verbose_name='Аватар',
         upload_to='users/',
         null=True,
         blank=True,
@@ -53,24 +47,32 @@ class CustomUser(AbstractUser):
         blank=True,
     )
 
+    def __str__(self):
+        return self.username
+
     class Meta:
         verbose_name = 'пользователь'
         verbose_name_plural = 'Пользователи'
-        ordering = ('date_joined',)
+        ordering = ('date_joined', 'username')
 
 
 class Follow(models.Model):
-
+    """Модель подписки."""
     user = models.ForeignKey(
         CustomUser,
+        verbose_name='подписчик',
         on_delete=models.CASCADE,
         related_name='follower'
     )
     author = models.ForeignKey(
         CustomUser,
+        verbose_name='автор',
         on_delete=models.CASCADE,
         related_name='following'
     )
+
+    def __str__(self):
+        return f'Подписка {self.user} на {self.author}'
 
     class Meta:
         constraints = [
@@ -79,3 +81,6 @@ class Follow(models.Model):
                 name='unique_user_following'
             )
         ]
+        verbose_name = 'подписка'
+        verbose_name_plural = 'Подписки'
+        ordering = ('author', 'user')

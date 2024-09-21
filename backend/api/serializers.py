@@ -74,6 +74,46 @@ class AvatarSerializers(serializers.ModelSerializer):
         fields = ('avatar',)
 
 
+class FollowSerializer(CustomUserSerializer):
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+
+    def get_recipes(self, obj):
+        recipes_limit = self.context.get(
+            'request').query_params.get('recipes_limit')
+        try:
+            validate_recipes_limit(recipes_limit)
+            query = obj.user_recipes.all()[:int(recipes_limit)]
+        except ValidationError:
+            query = obj.user_recipes.all()
+        serializer = RecipeBaseSerializer(
+            query,
+            many=True,
+        )
+        return serializer.data
+
+    def get_recipes_count(self, obj):
+        serializer = RecipeBaseSerializer(
+            obj.user_recipes.all(),
+            many=True,
+        )
+        return len(serializer.data)
+
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'recipes',
+            'recipes_count',
+            'is_subscribed',
+            'avatar',
+        )
+
+
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
@@ -216,6 +256,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance, validated_data):
+        breakpoint()
         ingredients_data = validated_data.get('ingredients')
         tags_data = validated_data.get('tags')
         instance.ingredients.clear()
@@ -266,72 +307,3 @@ class GetLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = ('short_link',)
-        read_only_fields = ('short_link',)
-
-
-class FollowSerializer(CustomUserSerializer):
-    recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.SerializerMethodField()
-
-    def get_recipes(self, obj):
-        recipes_limit = self.context.get(
-            'request').query_params.get('recipes_limit')
-        try:
-            validate_recipes_limit(recipes_limit)
-            query = obj.user_recipes.all()[:int(recipes_limit)]
-        except ValidationError:
-            query = obj.user_recipes.all()
-        serializer = RecipeBaseSerializer(
-            query,
-            many=True,
-        )
-        return serializer.data
-
-    def get_recipes_count(self, obj):
-        serializer = RecipeBaseSerializer(
-            obj.user_recipes.all(),
-            many=True,
-        )
-        return len(serializer.data)
-
-    class Meta:
-        model = User
-        fields = (
-            'email',
-            'id',
-            'username',
-            'first_name',
-            'last_name',
-            'recipes',
-            'recipes_count',
-            'is_subscribed',
-            'avatar',
-        )
-
-
-class SubscribeSerializer(FollowSerializer):
-
-    class Meta:
-        model = User
-        fields = (
-            'email',
-            'id',
-            'username',
-            'first_name',
-            'last_name',
-            'recipes',
-            'recipes_count',
-            'is_subscribed',
-            'avatar',
-        )
-        read_only_fields = (
-            'email',
-            'id',
-            'username',
-            'first_name',
-            'last_name',
-            'recipes',
-            'recipes_count',
-            'is_subscribed',
-            'avatar',
-        )

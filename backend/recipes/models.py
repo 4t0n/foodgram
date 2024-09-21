@@ -1,19 +1,19 @@
 from django.contrib.auth import get_user_model
-from django.db import models
 from django.core.validators import MinValueValidator
+from django.db import models
 from django.urls import reverse
 
-from foodgram_backend.constants import (LENGTH_RECIPE_NAME, LENGTH_TAG_NAME,
-                                        LENGTH_SLUG, MIN_COOKING_TIME,
-                                        MIN_INGREDIENT_AMOUNT,
-                                        LENGTH_INGREDIENT_NAME,
-                                        LENGTH_MEASUREMENT_UNIT)
-
+from foodgram_backend.constants import (
+    LENGTH_RECIPE_NAME, LENGTH_TAG_NAME,
+    LENGTH_SLUG, MIN_COOKING_TIME, MIN_INGREDIENT_AMOUNT,
+    LENGTH_INGREDIENT_NAME, LENGTH_MEASUREMENT_UNIT,
+)
 
 User = get_user_model()
 
 
 class Tag(models.Model):
+    """Модель тега."""
     name = models.CharField(
         verbose_name='Название', max_length=LENGTH_TAG_NAME
     )
@@ -24,15 +24,18 @@ class Tag(models.Model):
     class Meta:
         verbose_name = 'тег'
         verbose_name_plural = 'Теги'
+        ordering = ('name', 'slug')
 
     def __str__(self):
         return self.name
 
 
 class Ingredient(models.Model):
+    """Модель ингредиента."""
     name = models.CharField(
         verbose_name='Название',
         max_length=LENGTH_INGREDIENT_NAME,
+        unique=True,
     )
     measurement_unit = models.CharField(
         verbose_name='Единица измерения',
@@ -42,12 +45,14 @@ class Ingredient(models.Model):
     class Meta:
         verbose_name = 'ингредиент'
         verbose_name_plural = 'Ингредиенты'
+        ordering = ('name',)
 
     def __str__(self):
         return f'{self.name}, {self.measurement_unit}'
 
 
 class Recipe(models.Model):
+    """Модель рецепта."""
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -87,10 +92,12 @@ class Recipe(models.Model):
         blank=True,
         verbose_name='Токен для короткой ссылки',
     )
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = 'рецепт'
         verbose_name_plural = 'Рецепты'
+        ordering = ('created_at', 'name')
 
     def get_absolute_url(self):
         return reverse('recipe-detail', kwargs={'pk': self.pk})
@@ -100,6 +107,7 @@ class Recipe(models.Model):
 
 
 class RecipeIngredient(models.Model):
+    """Промежуточная модель для связи рецепта и ингредиента."""
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
@@ -117,8 +125,12 @@ class RecipeIngredient(models.Model):
         verbose_name='Количество',
     )
 
+    def __str__(self):
+        return f'{self.ingredient} для {self.recipe}'
+
     class Meta:
         verbose_name_plural = 'Ингредиенты для рецептов'
+        ordering = ('recipe', 'ingredient')
         constraints = [
             models.UniqueConstraint(
                 fields=['recipe', 'ingredient'],
