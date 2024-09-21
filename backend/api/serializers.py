@@ -5,14 +5,13 @@ import string
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.db.utils import IntegrityError
-from djoser.serializers import UserSerializer, UserCreateSerializer
+from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 from rest_framework.validators import ValidationError
 
-from .validators import validate_recipes_limit
 from foodgram_backend.constants import SHORT_LINK_LENGTH
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
-from users.models import Follow
+from .validators import validate_recipes_limit
 
 User = get_user_model()
 
