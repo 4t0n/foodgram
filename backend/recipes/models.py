@@ -100,7 +100,7 @@ class Recipe(models.Model):
         ordering = ('created_at', 'name')
 
     def get_absolute_url(self):
-        return reverse('recipe-detail', kwargs={'pk': self.pk})
+        return f'/recipes/{self.pk}/'
 
     def __str__(self):
         return self.name

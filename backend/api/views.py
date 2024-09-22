@@ -1,3 +1,6 @@
+import os
+
+from django.db.models import Count
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -10,7 +13,6 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from foodgram_backend.constants import HOST_NAME
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag, User
 from .filters import IngredientFilter, RecipeFilter
 from .mixins import post_destroy_mixin
@@ -144,8 +146,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(['get',], detail=True, url_path='get-link')
     def get_link(self, request, *args, **kwargs):
         serializer = GetLinkSerializer(self.get_object())
-        return Response({'short-link': f"{HOST_NAME}/s/"
-                        f"{serializer.data.get('short_link')}"})
+        return Response({'short-link': f"{os.getenv('HOST_NAME')}/s/"
+                        f"{serializer.data.get('short_link')}/"})
 
     @action(['post', 'delete'],
             detail=False,
@@ -184,17 +186,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(['get',], detail=False, url_path='download_shopping_cart')
     def download_shopping_cart(self, request, *args, **kwargs):
         shopping_cart = ''
-        user = User.objects.get(id=1)
+        user = request.user
         ingredients = RecipeIngredient.objects.filter(
             recipe__shopping=user
         ).values(
-            'ingredient__name',
-            'ingredient__measurement_unit'
-        ).annotate(total=Sum('amount', distinct=True))
+            'ingredient'
+        ).annotate(total=Count('amount'))
         for ingredient in ingredients:
+            item = Ingredient.objects.get(pk=ingredient['ingredient'])
             shopping_cart += (
-                f"— {ingredient['ingredient__name']}, "
-                f"{ingredient['ingredient__measurement_unit']}\t"
+                f"— {item.name}, "
+                f"{item.measurement_unit}\t"
                 f"{ingredient['total']}\n"
             )
         response = HttpResponse(shopping_cart, content_type='text/plain')
@@ -210,4 +212,5 @@ class ShortLinkRedirect(RedirectView):
     def get(self, request, *args, **kwargs):
         object_url = kwargs['short_link']
         obj = get_object_or_404(Recipe, short_link=object_url)
-        return redirect(obj.get_absolute_url())
+        return redirect(f"http://{os.getenv('HOST_NAME')}"
+                        f"{obj.get_absolute_url()}")
