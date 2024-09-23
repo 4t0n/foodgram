@@ -34,3 +34,4 @@ services:
       - 8000:80
     volumes:
       - static:/staticfiles/
+      - media:/var/www/foodgram/media/
