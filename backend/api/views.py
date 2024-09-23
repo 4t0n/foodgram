@@ -1,6 +1,5 @@
 import os
 
-from django.db.models import Count
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -13,7 +12,8 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag, User
+from recipes.models import Ingredient, Recipe, Tag, User
+
 from .filters import IngredientFilter, RecipeFilter
 from .mixins import post_destroy_mixin
 from .pagination import CustomPageNumberPagination
@@ -186,21 +186,20 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(['get',], detail=False, url_path='download_shopping_cart')
     def download_shopping_cart(self, request, *args, **kwargs):
         shopping_cart = ''
-        user = request.user
-        ingredients = RecipeIngredient.objects.filter(
-            recipe__shopping=user
-        ).values(
-            'ingredient'
-        ).annotate(total=Count('amount'))
+        user = User.objects.get(id=1)
+        ingredients = Ingredient.objects.filter(
+            ingredient_to_recipe__recipe__shopping=user).annotate(
+            total_amount=Sum('ingredient_to_recipe__amount')).values(
+                'name', 'measurement_unit', 'total_amount').order_by('name')
         for ingredient in ingredients:
-            item = Ingredient.objects.get(pk=ingredient['ingredient'])
             shopping_cart += (
-                f"— {item.name}, "
-                f"{item.measurement_unit}\t"
-                f"{ingredient['total']}\n"
+                f"— {ingredient['name']}, "
+                f"{ingredient['measurement_unit']}\t"
+                f"{ingredient['total_amount']}\n"
             )
         response = HttpResponse(shopping_cart, content_type='text/plain')
-        response['Content-Disposition'] = 'attachment; filename=cart.txt'
+        response['Content-Disposition'] = (
+            f'attachment;filename={user.username}-cart.txt')
         return response
 
 
@@ -212,5 +211,5 @@ class ShortLinkRedirect(RedirectView):
     def get(self, request, *args, **kwargs):
         object_url = kwargs['short_link']
         obj = get_object_or_404(Recipe, short_link=object_url)
-        return redirect(f"http://{os.getenv('HOST_NAME')}"
-                        f"{obj.get_absolute_url()}")
+        return redirect(
+            f"{os.getenv('HOST_NAME')}{obj.get_absolute_url()}")
