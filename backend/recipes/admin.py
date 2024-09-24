@@ -19,7 +19,15 @@ class RecipeIngredientInline(admin.TabularInline):
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    fields = ['name', 'image', 'text', 'cooking_time', 'tags', 'short_link']
+    fields = [
+        'name',
+        'image',
+        'text',
+        'cooking_time',
+        'tags',
+        'short_link',
+        'favorites_count',
+    ]
     readonly_fields = ['short_link',]
     filter_horizontal = ('tags',)
     inlines = [RecipeIngredientInline]

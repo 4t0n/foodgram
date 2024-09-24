@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from recipes.models import Ingredient, Recipe, Tag, User
 
 from .filters import IngredientFilter, RecipeFilter
-from .mixins import post_destroy_mixin
+from .utils import post_destroy_mixin
 from .pagination import CustomPageNumberPagination
 from .permissions import IsAuthorOrAdmin
 from .serializers import (
