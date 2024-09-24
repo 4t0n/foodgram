@@ -14,13 +14,13 @@ services:
   backend:
     depends_on:
       - db
-    build: ./backend/
+    image: 4t0n/foodgram_backend
     env_file: .env
     volumes:
       - media:/var/www/foodgram/media/
       - static:/backend_static
   frontend:
-    build: ./frontend/
+    image: 4t0n/foodgram_frontend
     env_file: .env
     command: cp -r /app/build/. /frontend_static/
     volumes:
@@ -28,7 +28,7 @@ services:
   gateway:
     depends_on:
       - backend
-    build: ./infra/
+    image: 4t0n/foodgram_gateway
     env_file: .env
     ports:
       - 8000:80
