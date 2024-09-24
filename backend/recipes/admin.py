@@ -26,14 +26,18 @@ class RecipeAdmin(admin.ModelAdmin):
         'cooking_time',
         'tags',
         'short_link',
-        'favorites_count',
+        'favorite_count',
     ]
-    readonly_fields = ['short_link',]
+    readonly_fields = ['short_link', 'favorite_count']
     filter_horizontal = ('tags',)
     inlines = [RecipeIngredientInline]
     list_display = ['name', 'author']
     search_fields = ['author', 'name']
     list_filter = ['tags']
+
+    @admin.display(description="Количество добавлений в избранное")
+    def favorite_count(self, obj):
+        return obj.favorites.count()
 
     def save_model(self, request, obj, form, change):
         obj.author = request.user

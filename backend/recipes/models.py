@@ -93,10 +93,6 @@ class Recipe(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
-    @property
-    def favorites_count(self):
-        return self.favorites.count()
-
     class Meta:
         verbose_name = 'рецепт'
         verbose_name_plural = 'Рецепты'
