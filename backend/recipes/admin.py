@@ -31,8 +31,8 @@ class RecipeAdmin(admin.ModelAdmin):
     readonly_fields = ['short_link', 'favorite_count']
     filter_horizontal = ('tags',)
     inlines = [RecipeIngredientInline]
-    list_display = ['name', 'author__username']
-    search_fields = ['author', 'name']
+    list_display = ['name', 'author']
+    search_fields = ['author__username', 'name']
     list_filter = ['tags']
 
     @admin.display(description="Количество добавлений в избранное")
