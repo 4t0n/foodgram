@@ -96,7 +96,7 @@ class Recipe(models.Model):
     class Meta:
         verbose_name = 'рецепт'
         verbose_name_plural = 'Рецепты'
-        ordering = ('created_at', 'name')
+        ordering = ('-created_at', 'name')
 
     def get_absolute_url(self):
         return f'/recipes/{self.pk}/'
