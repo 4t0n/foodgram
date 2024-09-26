@@ -26,6 +26,7 @@ from .serializers import (
 
 
 class CustomUserViewSet(UserViewSet):
+    """Вьюсет для работы с пользователями."""
     pagination_class = CustomPageNumberPagination
 
     def update(self, request, *args, **kwargs):
@@ -36,6 +37,7 @@ class CustomUserViewSet(UserViewSet):
 
     @action(['get',], detail=False, permission_classes=(IsAuthenticated,))
     def me(self, request, *args, **kwargs):
+        """Выводит информацию об авторизованном ползователе."""
         self.get_object = self.get_instance
         return self.retrieve(request, *args, **kwargs)
 
@@ -46,6 +48,7 @@ class CustomUserViewSet(UserViewSet):
         url_path='me/avatar',
     )
     def avatar(self, request, *args, **kwargs):
+        """Добавляет аватар пользователя."""
         serializer = AvatarSerializers(
             instance=request.user,
             data=request.data,
@@ -56,6 +59,7 @@ class CustomUserViewSet(UserViewSet):
 
     @avatar.mapping.delete
     def delete_avatar(self, request, *args, **kwargs):
+        """Удаляет аватар пользователя."""
         user = self.request.user
         user.avatar.delete()
         user.save
@@ -66,6 +70,7 @@ class CustomUserViewSet(UserViewSet):
             permission_classes=(IsAuthenticated,),
             )
     def subscriptions(self, request, *args, **kwargs):
+        """Выводит информацию о подписках пользователей."""
         follows = request.user.subscriptions.all()
         page = self.paginate_queryset(follows)
         if page:
@@ -88,6 +93,7 @@ class CustomUserViewSet(UserViewSet):
             url_path=r'(?P<id>\d+)/subscribe',
             )
     def subscribe(self, request, id=None, **kwargs):
+        """Реализует процесс подписок."""
         author = get_object_or_404(User, pk=id)
         user = request.user
         if author == user:
@@ -105,11 +111,13 @@ class CustomUserViewSet(UserViewSet):
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
+    """Вьюсет для работы с тегами."""
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+    """Вьюсет для работы с ингредиентами."""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     filter_backends = (DjangoFilterBackend,)
@@ -117,6 +125,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
+    """Вьюсет для работы с рецептами."""
     pagination_class = CustomPageNumberPagination
     queryset = Recipe.objects.all(
     ).select_related('author')
@@ -146,6 +155,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(['get',], detail=True, url_path='get-link')
     def get_link(self, request, *args, **kwargs):
+        """Выводит короткую ссылку на текущий рецепт."""
         serializer = GetLinkSerializer(self.get_object())
         return Response({'short-link': f"{os.getenv('HOST_NAME')}/s/"
                         f"{serializer.data.get('short_link')}/"})
@@ -156,6 +166,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             url_path=r'(?P<id>\d+)/favorite'
             )
     def favorite(self, request, id=None, **kwargs):
+        """Реализует добавление рецептов в избранное."""
         recipe = get_object_or_404(Recipe, pk=id)
         user = request.user
         return post_destroy_mixin(
@@ -173,6 +184,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             url_path=r'(?P<id>\d+)/shopping_cart'
             )
     def shopping_cart(self, request, id=None, **kwargs):
+        """Управляет списком покупок."""
         recipe = get_object_or_404(Recipe, pk=id)
         user = request.user
         return post_destroy_mixin(
@@ -186,6 +198,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(['get',], detail=False, url_path='download_shopping_cart')
     def download_shopping_cart(self, request, *args, **kwargs):
+        """Загрузка списка покупок."""
         shopping_cart = ''
         user = request.user
         ingredients = Ingredient.objects.filter(
@@ -205,6 +218,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 
 class ShortLinkRedirect(RedirectView):
+    """Вьюсет для перенаправления с короткой ссылки."""
     permanent = False
     query_string = True
     pattern_name = "recipe-detail"
