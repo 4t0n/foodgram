@@ -35,14 +35,14 @@ class CustomUserViewSet(UserViewSet):
     def destroy(self, request, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    @action(['get',], detail=False, permission_classes=(IsAuthenticated,))
+    @action(['get'], detail=False, permission_classes=(IsAuthenticated,))
     def me(self, request, *args, **kwargs):
         """Выводит информацию об авторизованном ползователе."""
         self.get_object = self.get_instance
         return self.retrieve(request, *args, **kwargs)
 
     @action(
-        ['put',],
+        ['put'],
         detail=False,
         permission_classes=(CurrentUserOrAdmin,),
         url_path='me/avatar',
@@ -153,7 +153,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, partial=True, **kwargs):
         return super().update(request, *args, **kwargs)
 
-    @action(['get',], detail=True, url_path='get-link')
+    @action(['get'], detail=True, url_path='get-link')
     def get_link(self, request, *args, **kwargs):
         """Выводит короткую ссылку на текущий рецепт."""
         serializer = GetLinkSerializer(self.get_object())
@@ -196,7 +196,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             error_message_destroy='Рецепт отсутствует в списке покупок!',
         )
 
-    @action(['get',], detail=False, url_path='download_shopping_cart')
+    @action(['get'], detail=False, url_path='download_shopping_cart')
     def download_shopping_cart(self, request, *args, **kwargs):
         """Загрузка списка покупок."""
         shopping_cart = ''
