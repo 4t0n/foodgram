@@ -79,11 +79,12 @@ class FollowSerializer(CustomUserSerializer):
     recipes_count = serializers.SerializerMethodField()
 
     def get_recipes(self, obj):
-        recipes_limit = self.context.get(
-            'request').query_params.get('recipes_limit')
+        recipes_limit = self.context.get('request').query_params.get(
+            'recipes_limit'
+        )
         try:
             validate_recipes_limit(recipes_limit)
-            query = obj.user_recipes.all()[:int(recipes_limit)]
+            query = obj.user_recipes.all()[: int(recipes_limit)]
         except ValidationError:
             query = obj.user_recipes.all()
         serializer = RecipeBaseSerializer(
@@ -216,17 +217,18 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     def validate_ingredients(self, ingredients):
         if not ingredients:
             raise serializers.ValidationError(
-                {'ingredients': 'Отсутствуют ингредиенты!'})
+                {'ingredients': 'Отсутствуют ингредиенты!'}
+            )
         elif len(ingredients) != len(set(ing['id'] for ing in ingredients)):
             raise serializers.ValidationError(
-                {'ingredients': 'Ингредиенты повторяются!'})
+                {'ingredients': 'Ингредиенты повторяются!'}
+            )
         else:
             return ingredients
 
     def validate_tags(self, tags):
         if len(tags) != len(set(tags)):
-            raise serializers.ValidationError(
-                {'tags': 'Теги повторяются!'})
+            raise serializers.ValidationError({'tags': 'Теги повторяются!'})
         else:
             return tags
 
@@ -235,8 +237,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         instance = super().create(validated_data)
         short_link = ''.join(
             random.choices(
-                string.ascii_letters + string.digits,
-                k=SHORT_LINK_LENGTH
+                string.ascii_letters + string.digits, k=SHORT_LINK_LENGTH
             )
         )
         while True:
@@ -246,13 +247,16 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                 break
             except IntegrityError:
                 pass
-        RecipeIngredient.objects.bulk_create([
-            RecipeIngredient(
-                recipe=instance,
-                ingredient=ingredient['id'],
-                amount=ingredient['amount']
-            ) for ingredient in ingredients_data
-        ])
+        RecipeIngredient.objects.bulk_create(
+            [
+                RecipeIngredient(
+                    recipe=instance,
+                    ingredient=ingredient['id'],
+                    amount=ingredient['amount'],
+                )
+                for ingredient in ingredients_data
+            ]
+        )
         return instance
 
     def update(self, instance, validated_data):
@@ -260,20 +264,24 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         tags_data = validated_data.get('tags')
         instance.ingredients.clear()
         RecipeIngredient.objects.filter(recipe=instance).delete()
-        RecipeIngredient.objects.bulk_create([
-            RecipeIngredient(
-                recipe=instance,
-                ingredient=ingredient['id'],
-                amount=ingredient['amount']
-            ) for ingredient in ingredients_data
-        ])
+        RecipeIngredient.objects.bulk_create(
+            [
+                RecipeIngredient(
+                    recipe=instance,
+                    ingredient=ingredient['id'],
+                    amount=ingredient['amount'],
+                )
+                for ingredient in ingredients_data
+            ]
+        )
         instance.tags.clear()
         instance.tags.set(tags_data)
         instance.image = validated_data.get('image', instance.image)
         instance.name = validated_data.get('name', instance.name)
         instance.text = validated_data.get('text', instance.text)
         instance.cooking_time = validated_data.get(
-            'cooking_time', instance.cooking_time)
+            'cooking_time', instance.cooking_time
+        )
         instance.save()
         return instance
 

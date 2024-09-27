@@ -3,9 +3,13 @@ from django.core.validators import MinValueValidator
 from django.db import models
 
 from foodgram_backend.constants import (
-    LENGTH_RECIPE_NAME, LENGTH_TAG_NAME,
-    LENGTH_SLUG, MIN_COOKING_TIME, MIN_INGREDIENT_AMOUNT,
-    LENGTH_INGREDIENT_NAME, LENGTH_MEASUREMENT_UNIT,
+    LENGTH_RECIPE_NAME,
+    LENGTH_TAG_NAME,
+    LENGTH_SLUG,
+    MIN_COOKING_TIME,
+    MIN_INGREDIENT_AMOUNT,
+    LENGTH_INGREDIENT_NAME,
+    LENGTH_MEASUREMENT_UNIT,
 )
 
 User = get_user_model()
@@ -13,6 +17,7 @@ User = get_user_model()
 
 class Tag(models.Model):
     """Модель тега."""
+
     name = models.CharField(
         verbose_name='Название', max_length=LENGTH_TAG_NAME
     )
@@ -31,6 +36,7 @@ class Tag(models.Model):
 
 class Ingredient(models.Model):
     """Модель ингредиента."""
+
     name = models.CharField(
         verbose_name='Название',
         max_length=LENGTH_INGREDIENT_NAME,
@@ -52,6 +58,7 @@ class Ingredient(models.Model):
 
 class Recipe(models.Model):
     """Модель рецепта."""
+
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -98,15 +105,16 @@ class Recipe(models.Model):
         verbose_name_plural = 'Рецепты'
         ordering = ('-created_at', 'name')
 
-    def get_absolute_url(self):
-        return f'/recipes/{self.pk}/'
-
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        return f'/recipes/{self.pk}/'
 
 
 class RecipeIngredient(models.Model):
     """Промежуточная модель для связи рецепта и ингредиента."""
+
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
@@ -124,15 +132,15 @@ class RecipeIngredient(models.Model):
         verbose_name='Количество',
     )
 
-    def __str__(self):
-        return f'{self.ingredient} для {self.recipe}'
-
     class Meta:
         verbose_name_plural = 'Ингредиенты для рецептов'
         ordering = ('recipe', 'ingredient')
         constraints = [
             models.UniqueConstraint(
                 fields=['recipe', 'ingredient'],
-                name='unique_recipe_ingredient'
+                name='unique_recipe_ingredient',
             )
         ]
+
+    def __str__(self):
+        return f'{self.ingredient} для {self.recipe}'

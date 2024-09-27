@@ -2,16 +2,20 @@ from django.urls import include, path
 from rest_framework import routers
 
 from .views import (
-    CustomUserViewSet, IngredientViewSet, RecipeViewSet, TagViewSet)
+    FoodgramUserViewSet,
+    IngredientViewSet,
+    RecipeViewSet,
+    TagViewSet,
+)
 
 api_urls = []
-router_api = routers.DefaultRouter()
-router_api.register('users', CustomUserViewSet, basename='user')
-router_api.register('tags', TagViewSet, basename='tag')
-router_api.register('ingredients', IngredientViewSet, basename='ingredient')
-router_api.register('recipes', RecipeViewSet)
+v1_router_api = routers.DefaultRouter()
+v1_router_api.register('users', FoodgramUserViewSet, basename='user')
+v1_router_api.register('tags', TagViewSet, basename='tag')
+v1_router_api.register('ingredients', IngredientViewSet, basename='ingredient')
+v1_router_api.register('recipes', RecipeViewSet)
 
-api_urls.extend(router_api.urls)
+api_urls.extend(v1_router_api.urls)
 
 urlpatterns = [
     path('auth/', include('djoser.urls.authtoken')),

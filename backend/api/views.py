@@ -19,14 +19,20 @@ from .utils import post_destroy_mixin
 from .pagination import CustomPageNumberPagination
 from .permissions import IsAuthorOrAdmin
 from .serializers import (
-    AvatarSerializers, FollowSerializer,
-    GetLinkSerializer, IngredientSerializer, RecipeBaseSerializer,
-    RecipeSerializer, RecipeCreateSerializer, TagSerializer,
+    AvatarSerializers,
+    FollowSerializer,
+    GetLinkSerializer,
+    IngredientSerializer,
+    RecipeBaseSerializer,
+    RecipeSerializer,
+    RecipeCreateSerializer,
+    TagSerializer,
 )
 
 
-class CustomUserViewSet(UserViewSet):
+class FoodgramUserViewSet(UserViewSet):
     """Вьюсет для работы с пользователями."""
+
     pagination_class = CustomPageNumberPagination
 
     def update(self, request, *args, **kwargs):
@@ -62,13 +68,13 @@ class CustomUserViewSet(UserViewSet):
         """Удаляет аватар пользователя."""
         user = self.request.user
         user.avatar.delete()
-        user.save
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(['get'],
-            detail=False,
-            permission_classes=(IsAuthenticated,),
-            )
+    @action(
+        ['get'],
+        detail=False,
+        permission_classes=(IsAuthenticated,),
+    )
     def subscriptions(self, request, *args, **kwargs):
         """Выводит информацию о подписках пользователей."""
         follows = request.user.subscriptions.all()
@@ -87,11 +93,12 @@ class CustomUserViewSet(UserViewSet):
         )
         return Response(serializer.data)
 
-    @action(['post', 'delete'],
-            detail=False,
-            permission_classes=(IsAuthenticated,),
-            url_path=r'(?P<id>\d+)/subscribe',
-            )
+    @action(
+        ['post', 'delete'],
+        detail=False,
+        permission_classes=(IsAuthenticated,),
+        url_path=r'(?P<id>\d+)/subscribe',
+    )
     def subscribe(self, request, id=None, **kwargs):
         """Реализует процесс подписок."""
         author = get_object_or_404(User, pk=id)
@@ -99,7 +106,8 @@ class CustomUserViewSet(UserViewSet):
         if author == user:
             return Response(
                 {'errors': 'Нельзя иметь подписку на самого себя!'},
-                status=status.HTTP_400_BAD_REQUEST)
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return post_destroy_mixin(
             obj=author,
             field=user.subscriptions,
@@ -112,12 +120,14 @@ class CustomUserViewSet(UserViewSet):
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     """Вьюсет для работы с тегами."""
+
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     """Вьюсет для работы с ингредиентами."""
+
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     filter_backends = (DjangoFilterBackend,)
@@ -126,17 +136,15 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     """Вьюсет для работы с рецептами."""
+
     pagination_class = CustomPageNumberPagination
-    queryset = Recipe.objects.all(
-    ).select_related('author')
+    queryset = Recipe.objects.all().select_related('author')
     serializer_class = RecipeSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
     def perform_create(self, serializer):
-        serializer.save(
-            author=self.request.user
-        )
+        serializer.save(author=self.request.user)
 
     def get_permissions(self):
         if self.action == 'create':
@@ -157,32 +165,37 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_link(self, request, *args, **kwargs):
         """Выводит короткую ссылку на текущий рецепт."""
         serializer = GetLinkSerializer(self.get_object())
-        return Response({'short-link': f"{os.getenv('HOST_NAME')}/s/"
-                        f"{serializer.data.get('short_link')}/"})
+        return Response(
+            {
+                'short-link': f"{os.getenv('HOST_NAME')}/s/"
+                f"{serializer.data.get('short_link')}/"
+            }
+        )
 
-    @action(['post', 'delete'],
-            detail=False,
-            permission_classes=(IsAuthenticated,),
-            url_path=r'(?P<id>\d+)/favorite'
-            )
+    @action(
+        ['post', 'delete'],
+        detail=False,
+        permission_classes=(IsAuthenticated,),
+        url_path=r'(?P<id>\d+)/favorite',
+    )
     def favorite(self, request, id=None, **kwargs):
         """Реализует добавление рецептов в избранное."""
         recipe = get_object_or_404(Recipe, pk=id)
-        user = request.user
         return post_destroy_mixin(
             obj=recipe,
-            field=user.favorite,
+            field=request.user.favorite,
             request=request,
             serializer=RecipeBaseSerializer,
             error_message_post='Рецепт уже есть в избранном!',
             error_message_destroy='Рецепт отсутствует в избранном!',
         )
 
-    @action(['post', 'delete'],
-            detail=False,
-            permission_classes=(IsAuthenticated,),
-            url_path=r'(?P<id>\d+)/shopping_cart'
-            )
+    @action(
+        ['post', 'delete'],
+        detail=False,
+        permission_classes=(IsAuthenticated,),
+        url_path=r'(?P<id>\d+)/shopping_cart',
+    )
     def shopping_cart(self, request, id=None, **kwargs):
         """Управляет списком покупок."""
         recipe = get_object_or_404(Recipe, pk=id)
@@ -201,10 +214,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """Загрузка списка покупок."""
         shopping_cart = ''
         user = request.user
-        ingredients = Ingredient.objects.filter(
-            ingredient_to_recipe__recipe__shopping=user).annotate(
-            total_amount=Sum('ingredient_to_recipe__amount')).values(
-                'name', 'measurement_unit', 'total_amount').order_by('name')
+        ingredients = (
+            Ingredient.objects.filter(
+                ingredient_to_recipe__recipe__shopping=user
+            )
+            .annotate(total_amount=Sum('ingredient_to_recipe__amount'))
+            .values('name', 'measurement_unit', 'total_amount')
+            .order_by('name')
+        )
         for ingredient in ingredients:
             shopping_cart += (
                 f"— {ingredient['name']}, "
@@ -213,12 +230,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
             )
         response = HttpResponse(shopping_cart, content_type='text/plain')
         response['Content-Disposition'] = (
-            f'attachment;filename={user.username}-cart.txt')
+            f'attachment;filename={user.username}-cart.txt'
+        )
         return response
 
 
 class ShortLinkRedirect(RedirectView):
     """Вьюсет для перенаправления с короткой ссылки."""
+
     permanent = False
     query_string = True
     pattern_name = "recipe-detail"
@@ -226,5 +245,4 @@ class ShortLinkRedirect(RedirectView):
     def get(self, request, *args, **kwargs):
         object_url = kwargs['short_link']
         obj = get_object_or_404(Recipe, short_link=object_url)
-        return redirect(
-            f"{os.getenv('HOST_NAME')}{obj.get_absolute_url()}")
+        return redirect(f"{os.getenv('HOST_NAME')}{obj.get_absolute_url()}")

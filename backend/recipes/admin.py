@@ -43,8 +43,7 @@ class RecipeAdmin(admin.ModelAdmin):
         obj.author = request.user
         short_link = ''.join(
             random.choices(
-                string.ascii_letters + string.digits,
-                k=SHORT_LINK_LENGTH
+                string.ascii_letters + string.digits, k=SHORT_LINK_LENGTH
             )
         )
         while True:
