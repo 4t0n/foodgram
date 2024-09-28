@@ -10,7 +10,7 @@ from foodgram_backend.constants import (
 )
 
 
-class User(AbstractUser):
+class FoodgramUser(AbstractUser):
     """Модель пользователя."""
 
     username = models.CharField(
@@ -65,13 +65,13 @@ class Follow(models.Model):
     """Модель подписки."""
 
     user = models.ForeignKey(
-        User,
+        FoodgramUser,
         verbose_name='подписчик',
         on_delete=models.CASCADE,
         related_name='follower',
     )
     author = models.ForeignKey(
-        User,
+        FoodgramUser,
         verbose_name='автор',
         on_delete=models.CASCADE,
         related_name='following',

@@ -1,7 +1,10 @@
 from django.contrib import admin
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 
-from .models import User, Follow
+from .models import Follow
+
+User = get_user_model()
 
 
 @admin.register(User)
