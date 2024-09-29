@@ -7,7 +7,7 @@ def validate_recipes_limit(value):
     """Проверка фильтра recipes_limit."""
     try:
         recipes_limit = int(value)
-        if recipes_limit < 0 or recipes_limit > MAX_RECIPES_LIMIT:
-            raise ValidationError
-    except (TypeError, ValueError, ValidationError):
+    except ValueError:
+        raise ValidationError
+    if recipes_limit < 0 or recipes_limit > MAX_RECIPES_LIMIT:
         raise ValidationError

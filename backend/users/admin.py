@@ -10,7 +10,7 @@ User = get_user_model()
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     search_fields = ['email', 'username']
-    filter_horizontal = ('favorite', 'shopping_cart')
+    filter_horizontal = ('favorites', 'shopping_cart')
 
 
 @admin.register(Follow)

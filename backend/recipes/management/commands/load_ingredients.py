@@ -23,6 +23,6 @@ class Command(BaseCommand):
                     fail_count += 1
                     continue
             print(
-                f'Загружено {success_count} записей в БД.'
+                f'Загружено {success_count} записей в БД. '
                 f'{fail_count} записей не удалось загрузить.'
             )

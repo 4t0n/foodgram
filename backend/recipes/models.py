@@ -12,6 +12,8 @@ from foodgram_backend.constants import (
     LENGTH_MEASUREMENT_UNIT,
 )
 
+from .querysets import RecipeQuerySet
+
 User = get_user_model()
 
 
@@ -99,6 +101,8 @@ class Recipe(models.Model):
         verbose_name='Токен для короткой ссылки',
     )
     created_at = models.DateTimeField(auto_now_add=True)
+
+    objects = RecipeQuerySet.as_manager()
 
     class Meta:
         verbose_name = 'рецепт'

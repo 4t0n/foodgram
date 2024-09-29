@@ -15,22 +15,28 @@ from rest_framework.response import Response
 from recipes.models import Ingredient, Recipe, Tag, User
 
 from .filters import IngredientFilter, RecipeFilter
-from .utils import post_destroy_mixin
+from .mixins import PostDestroyMixin
 from .pagination import CustomPageNumberPagination
 from .permissions import IsAuthorOrAdmin
 from .serializers import (
     AvatarSerializers,
+    CreateFavoriteSerializer,
+    CreateShoppingSerializer,
+    CreateSubscribeSerializer,
     FollowSerializer,
     GetLinkSerializer,
     IngredientSerializer,
-    RecipeBaseSerializer,
     RecipeSerializer,
     RecipeCreateSerializer,
     TagSerializer,
 )
 
 
-class FoodgramUserViewSet(UserViewSet):
+def about_technologies(request):
+    return HttpResponse(status=404)
+
+
+class FoodgramUserViewSet(UserViewSet, PostDestroyMixin):
     """Вьюсет для работы с пользователями."""
 
     pagination_class = CustomPageNumberPagination
@@ -43,7 +49,7 @@ class FoodgramUserViewSet(UserViewSet):
 
     @action(['get'], detail=False, permission_classes=(IsAuthenticated,))
     def me(self, request, *args, **kwargs):
-        """Выводит информацию об авторизованном ползователе."""
+        """Выводит информацию об авторизованном пользователе."""
         self.get_object = self.get_instance
         return self.retrieve(request, *args, **kwargs)
 
@@ -94,27 +100,24 @@ class FoodgramUserViewSet(UserViewSet):
         return Response(serializer.data)
 
     @action(
-        ['post', 'delete'],
+        ['post'],
         detail=False,
         permission_classes=(IsAuthenticated,),
         url_path=r'(?P<id>\d+)/subscribe',
     )
     def subscribe(self, request, id=None, **kwargs):
-        """Реализует процесс подписок."""
-        author = get_object_or_404(User, pk=id)
-        user = request.user
-        if author == user:
-            return Response(
-                {'errors': 'Нельзя иметь подписку на самого себя!'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        return post_destroy_mixin(
-            obj=author,
-            field=user.subscriptions,
-            request=request,
-            serializer=FollowSerializer,
-            error_message_post='Вы уже подписаны на этого пользователя!',
-            error_message_destroy='Вы не подписаны на этого пользователя!',
+        """Добавляет подписку."""
+        data = {
+            'author': get_object_or_404(User, pk=id).id,
+            'user': request.user.id,
+        }
+        return self.add_object(data, CreateSubscribeSerializer)
+
+    @subscribe.mapping.delete
+    def delete_subscribe(self, request, id=None, **kwargs):
+        """Удаляет подписку пользователя."""
+        return self.destroy_object(
+            get_object_or_404(User, pk=id), self.request.user.subscriptions
         )
 
 
@@ -134,14 +137,16 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     filterset_class = IngredientFilter
 
 
-class RecipeViewSet(viewsets.ModelViewSet):
+class RecipeViewSet(viewsets.ModelViewSet, PostDestroyMixin):
     """Вьюсет для работы с рецептами."""
 
     pagination_class = CustomPageNumberPagination
-    queryset = Recipe.objects.all().select_related('author')
     serializer_class = RecipeSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
+
+    def get_queryset(self):
+        return Recipe.objects.annotated_fields(self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -158,9 +163,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return RecipeCreateSerializer
         return self.serializer_class
 
-    def update(self, request, *args, partial=True, **kwargs):
-        return super().update(request, *args, **kwargs)
-
     @action(['get'], detail=True, url_path='get-link')
     def get_link(self, request, *args, **kwargs):
         """Выводит короткую ссылку на текущий рецепт."""
@@ -173,40 +175,45 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
     @action(
-        ['post', 'delete'],
+        ['post'],
         detail=False,
         permission_classes=(IsAuthenticated,),
         url_path=r'(?P<id>\d+)/favorite',
     )
     def favorite(self, request, id=None, **kwargs):
         """Реализует добавление рецептов в избранное."""
-        recipe = get_object_or_404(Recipe, pk=id)
-        return post_destroy_mixin(
-            obj=recipe,
-            field=request.user.favorite,
-            request=request,
-            serializer=RecipeBaseSerializer,
-            error_message_post='Рецепт уже есть в избранном!',
-            error_message_destroy='Рецепт отсутствует в избранном!',
+        data = {
+            'recipe': get_object_or_404(Recipe, pk=id).id,
+            'user': request.user.id,
+        }
+        return self.add_object(data, CreateFavoriteSerializer)
+
+    @favorite.mapping.delete
+    def delete_favorite(self, request, id=None, **kwargs):
+        """Удаляет подписку пользователя."""
+        return self.destroy_object(
+            get_object_or_404(Recipe, pk=id), self.request.user.favorites
         )
 
     @action(
-        ['post', 'delete'],
+        ['post'],
         detail=False,
         permission_classes=(IsAuthenticated,),
         url_path=r'(?P<id>\d+)/shopping_cart',
     )
     def shopping_cart(self, request, id=None, **kwargs):
-        """Управляет списком покупок."""
-        recipe = get_object_or_404(Recipe, pk=id)
-        user = request.user
-        return post_destroy_mixin(
-            obj=recipe,
-            field=user.shopping_cart,
-            request=request,
-            serializer=RecipeBaseSerializer,
-            error_message_post='Рецепт уже есть в списке покупок!',
-            error_message_destroy='Рецепт отсутствует в списке покупок!',
+        """Реализует добавление рецептов в избранное."""
+        data = {
+            'recipe': get_object_or_404(Recipe, pk=id).id,
+            'user': request.user.id,
+        }
+        return self.add_object(data, CreateShoppingSerializer)
+
+    @shopping_cart.mapping.delete
+    def delete_shopping_cart(self, request, id=None, **kwargs):
+        """Удаляет подписку пользователя."""
+        return self.destroy_object(
+            get_object_or_404(Recipe, pk=id), self.request.user.shopping_cart
         )
 
     @action(['get'], detail=False, url_path='download_shopping_cart')

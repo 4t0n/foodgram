@@ -1,26 +1,15 @@
-from rest_framework import status
-from rest_framework.response import Response
+import base64
+import string
+
+from django.core.files.base import ContentFile
+from rest_framework import serializers
 
 
-def post_destroy_mixin(
-    obj, field, request, serializer, error_message_post, error_message_destroy
-):
-    """Создаёт или удаляет записи в БД."""
-    if obj in field.all():
-        if request.method == 'POST':
-            return Response(
-                {'errors': error_message_post},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        field.remove(obj)
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    if request.method == 'POST':
-        field.add(obj)
-        serializer = serializer(
-            obj,
-            context={"request": request},
-        )
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(
-        {'errors': error_message_destroy}, status=status.HTTP_400_BAD_REQUEST
-    )
+class Base64ImageField(serializers.ImageField):
+    def to_internal_value(self, data):
+        if isinstance(data, str) and data.startswith('data:image'):
+            format, imgstr = data.split(';base64,')
+            ext = format.split('/')[-1]
+
+            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
+        return super().to_internal_value(data)

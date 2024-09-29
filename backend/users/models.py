@@ -35,16 +35,18 @@ class FoodgramUser(AbstractUser):
         symmetrical=False,
         blank=True,
     )
-    favorite = models.ManyToManyField(
-        verbose_name='Избранное',
+    favorites = models.ManyToManyField(
         to='recipes.Recipe',
-        related_name='favorites',
+        verbose_name='Избранное',
+        through='Favorite',
+        related_name='favorite',
         symmetrical=False,
         blank=True,
     )
     shopping_cart = models.ManyToManyField(
-        verbose_name='Список покупок',
         to='recipes.Recipe',
+        verbose_name='Список покупок',
+        through='ShoppingCart',
         related_name='shopping',
         symmetrical=False,
         blank=True,
@@ -61,8 +63,62 @@ class FoodgramUser(AbstractUser):
         return self.username
 
 
+class Favorite(models.Model):
+    """Промежуточная модель для избранного."""
+
+    user = models.ForeignKey(
+        FoodgramUser,
+        verbose_name='пользователь',
+        on_delete=models.CASCADE,
+        related_name='favorite_to_user',
+    )
+    recipe = models.ForeignKey(
+        to='recipes.Recipe',
+        verbose_name='рецепт',
+        on_delete=models.CASCADE,
+        related_name='user_to_favorite',
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'], name='unique_favorite'
+            )
+        ]
+        # verbose_name = 'подписка'
+        # verbose_name_plural = 'Подписки'
+        ordering = ('user', 'recipe')
+
+
+class ShoppingCart(models.Model):
+    """Промежуточная модель для корзины."""
+
+    user = models.ForeignKey(
+        FoodgramUser,
+        verbose_name='пользователь',
+        on_delete=models.CASCADE,
+        related_name='shopping_to_user',
+    )
+    recipe = models.ForeignKey(
+        to='recipes.Recipe',
+        verbose_name='рецепт',
+        on_delete=models.CASCADE,
+        related_name='user_to_shopping',
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'], name='unique_shopping'
+            )
+        ]
+        verbose_name = 'подписка'
+        verbose_name_plural = 'Подписки'
+        ordering = ('user', 'recipe')
+
+
 class Follow(models.Model):
-    """Модель подписки."""
+    """Промежуточная модель для подписок."""
 
     user = models.ForeignKey(
         FoodgramUser,
