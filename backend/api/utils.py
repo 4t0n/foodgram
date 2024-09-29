@@ -1,5 +1,4 @@
 import base64
-import string
 
 from django.core.files.base import ContentFile
 from rest_framework import serializers
