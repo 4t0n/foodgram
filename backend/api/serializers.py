@@ -70,6 +70,20 @@ class FollowSerializer(FoodgramUserSerializer):
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'recipes',
+            'recipes_count',
+            'is_subscribed',
+            'avatar',
+        )
+
     def get_recipes(self, obj):
         recipes_limit = self.context.get('request').query_params.get(
             'recipes_limit'
@@ -93,20 +107,6 @@ class FollowSerializer(FoodgramUserSerializer):
             many=True,
         )
         return len(serializer.data)
-
-    class Meta:
-        model = User
-        fields = (
-            'email',
-            'id',
-            'username',
-            'first_name',
-            'last_name',
-            'recipes',
-            'recipes_count',
-            'is_subscribed',
-            'avatar',
-        )
 
 
 class CreateSubscribeSerializer(serializers.ModelSerializer):
@@ -264,6 +264,18 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     ingredients = IngredientCreateSerializer(many=True)
     image = Base64ImageField()
 
+    class Meta:
+        model = Recipe
+        fields = (
+            'id',
+            'ingredients',
+            'tags',
+            'image',
+            'name',
+            'text',
+            'cooking_time',
+        )
+
     def validate(self, attrs):
         if not attrs.get('ingredients'):
             raise serializers.ValidationError(
@@ -354,18 +366,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             context=self.context,
         )
         return serializer.data
-
-    class Meta:
-        model = Recipe
-        fields = (
-            'id',
-            'ingredients',
-            'tags',
-            'image',
-            'name',
-            'text',
-            'cooking_time',
-        )
 
 
 class GetLinkSerializer(serializers.ModelSerializer):
