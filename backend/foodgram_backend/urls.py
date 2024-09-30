@@ -4,11 +4,9 @@ from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import TemplateView
 
-from api.views import ShortLinkRedirect, about_technologies
+from api.views import ShortLinkRedirect
 
 urlpatterns = [
-    path('about/', about_technologies),
-    path('technologies/', about_technologies),
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
     path('s/<str:short_link>/', ShortLinkRedirect.as_view()),

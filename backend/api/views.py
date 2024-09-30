@@ -32,10 +32,6 @@ from .serializers import (
 )
 
 
-def about_technologies(request):
-    return HttpResponse(status=404)
-
-
 class FoodgramUserViewSet(UserViewSet, PostDestroyMixin):
     """Вьюсет для работы с пользователями."""
 
