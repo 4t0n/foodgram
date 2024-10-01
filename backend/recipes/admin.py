@@ -1,3 +1,4 @@
+# для входа в админку: shvab-vladimir@yandex.ru pythonpracticum
 import random
 import string
 

@@ -4,6 +4,7 @@ from rest_framework.response import Response
 
 class PostDestroyMixin:
     """Создание и удаление записей в БД."""
+
     def add_object(self, data, serializer_class):
         serializer = serializer_class(
             data=data,
