@@ -2,6 +2,8 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
 
+from shortuuid.django_fields import ShortUUIDField
+
 from foodgram_backend.constants import (
     LENGTH_RECIPE_NAME,
     LENGTH_TAG_NAME,
@@ -94,12 +96,7 @@ class Recipe(models.Model):
         through='RecipeIngredient',
         verbose_name='Ингредиенты',
     )
-    short_link = models.CharField(
-        max_length=20,
-        unique=True,
-        blank=True,
-        verbose_name='Токен для короткой ссылки',
-    )
+    short_link = ShortUUIDField(length=10, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     objects = RecipeQuerySet.as_manager()

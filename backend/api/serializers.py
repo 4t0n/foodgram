@@ -1,13 +1,8 @@
-import random
-import string
-
 from django.contrib.auth import get_user_model
-from django.db.utils import IntegrityError
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator, ValidationError
 
-from foodgram_backend.constants import SHORT_LINK_LENGTH
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 from users.models import Favorite, Follow, ShoppingCart
 
@@ -102,7 +97,7 @@ class FollowSerializer(FoodgramUserSerializer):
         return serializer.data
 
     def get_recipes_count(self, obj):
-        return obj.user_recipes.all().count()
+        return obj.user_recipes.count()
 
 
 class CreateSubscribeSerializer(serializers.ModelSerializer):
@@ -314,19 +309,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data: dict):
         ingredients_data = validated_data.pop('ingredients')
         instance = super().create(validated_data)
-        while True:
-            try:
-                short_link = ''.join(
-                    random.choices(
-                        string.ascii_letters + string.digits,
-                        k=SHORT_LINK_LENGTH,
-                    )
-                )
-                instance.short_link = short_link
-                instance.save()
-                break
-            except IntegrityError:
-                pass
+        instance.save()
         self.recipe_ingredient_create(instance, ingredients_data)
         return instance
 

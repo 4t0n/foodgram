@@ -42,18 +42,6 @@ class RecipeAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         obj.author = request.user
-        short_link = ''.join(
-            random.choices(
-                string.ascii_letters + string.digits, k=SHORT_LINK_LENGTH
-            )
-        )
-        while True:
-            try:
-                obj.short_link = short_link
-                obj.save
-                break
-            except IntegrityError:
-                pass
         super().save_model(request, obj, form, change)
 
 

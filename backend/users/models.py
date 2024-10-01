@@ -138,7 +138,6 @@ class Follow(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'author'],
-                condition=models.Q('user' != 'author'),
                 name='unique_user_following',
             )
         ]
