@@ -1,12 +1,6 @@
 # для входа в админку: shvab-vladimir@yandex.ru pythonpracticum
-import random
-import string
-
 from django.contrib import admin
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError
-
-from foodgram_backend.constants import SHORT_LINK_LENGTH
 
 from .models import Ingredient, Recipe, RecipeIngredient, Tag
 
