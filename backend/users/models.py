@@ -85,8 +85,8 @@ class Favorite(models.Model):
                 fields=['user', 'recipe'], name='unique_favorite'
             )
         ]
-        # verbose_name = 'подписка'
-        # verbose_name_plural = 'Подписки'
+        verbose_name = 'рецепт в избранном'
+        verbose_name_plural = 'Избранное'
         ordering = ('user', 'recipe')
 
 
@@ -112,8 +112,8 @@ class ShoppingCart(models.Model):
                 fields=['user', 'recipe'], name='unique_shopping'
             )
         ]
-        verbose_name = 'подписка'
-        verbose_name_plural = 'Подписки'
+        verbose_name = 'рецепт в корзине'
+        verbose_name_plural = 'Корзина'
         ordering = ('user', 'recipe')
 
 
