@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.validators import UnicodeUsernameValidator
-from django.db import models
+from django.db import IntegrityError, models
 
 from foodgram_backend.constants import (
     LENGTH_EMAIL,
@@ -147,3 +147,8 @@ class Follow(models.Model):
 
     def __str__(self):
         return f'Подписка {self.user} на {self.author}'
+
+    def save(self, *args, **kwargs):
+        if self.user == self.author:
+            raise IntegrityError("Вы не можете подписаться на самого себя!")
+        super().save(*args, **kwargs)
