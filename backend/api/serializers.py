@@ -102,11 +102,7 @@ class FollowSerializer(FoodgramUserSerializer):
         return serializer.data
 
     def get_recipes_count(self, obj):
-        serializer = RecipeBaseSerializer(
-            obj.user_recipes.all(),
-            many=True,
-        )
-        return len(serializer.data)
+        return obj.user_recipes.all().count()
 
 
 class CreateSubscribeSerializer(serializers.ModelSerializer):

@@ -14,8 +14,8 @@ class PostDestroyMixin:
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def destroy_object(self, obj, field):
-        if obj in field.all():
-            field.remove(obj)
+    def destroy_object(self, obj, related_manager):
+        if related_manager.filter(id=obj.id).exists():
+            related_manager.remove(obj)
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
