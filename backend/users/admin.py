@@ -12,8 +12,9 @@ class FavoriteInline(admin.TabularInline):
     extra = 0
 
 
-class FollowInline(admin.TabularInline):
+class AuthorFollowInline(admin.TabularInline):
     model = Follow
+    fk_name = 'author'
     extra = 0
 
 
@@ -25,7 +26,7 @@ class ShoppingCartInline(admin.TabularInline):
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     search_fields = ['email', 'username']
-    inlines = [FavoriteInline, FollowInline, ShoppingCartInline]
+    inlines = [FavoriteInline, AuthorFollowInline, ShoppingCartInline]
 
 
 @admin.register(Follow)
