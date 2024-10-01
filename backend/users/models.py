@@ -136,7 +136,9 @@ class Follow(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'author'], name='unique_user_following'
+                fields=['user', 'author'],
+                condition=models.Q('user' != 'author'),
+                name='unique_user_following',
             )
         ]
         verbose_name = 'подписка'
