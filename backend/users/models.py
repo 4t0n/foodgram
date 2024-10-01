@@ -149,7 +149,7 @@ class Follow(models.Model):
     def __str__(self):
         return f'Подписка {self.user} на {self.author}'
 
-    def save(self, *args, **kwargs):
+    def clean(self):
         if self.user == self.author:
             raise ValidationError("Вы не можете подписаться на самого себя!")
-        super().save(*args, **kwargs)
+        return super().clean()
