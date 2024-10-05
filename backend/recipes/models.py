@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 
@@ -111,6 +112,11 @@ class Recipe(models.Model):
 
     def get_absolute_url(self):
         return f'/recipes/{self.pk}/'
+
+    def clean(self):
+        if not self.ingredients:
+            raise ValidationError("Необходимо выбрать ингредиенты!")
+        return super().clean()
 
 
 class RecipeIngredient(models.Model):
