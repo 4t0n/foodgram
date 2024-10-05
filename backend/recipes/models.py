@@ -113,11 +113,6 @@ class Recipe(models.Model):
     def get_absolute_url(self):
         return f'/recipes/{self.pk}/'
 
-    def clean(self):
-        if not self.ingredients:
-            raise ValidationError("Необходимо выбрать ингредиенты!")
-        return super().clean()
-
 
 class RecipeIngredient(models.Model):
     """Промежуточная модель для связи рецепта и ингредиента."""
